@@ -26,3 +26,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Reproducible standalone browser demo
+dist/
