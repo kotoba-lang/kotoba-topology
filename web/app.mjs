@@ -1,5 +1,17 @@
 import { EXAMPLES } from './examples.mjs';
 import { analyze, createState, normalizeState, neutralCue, hasCase, canCapitalize, exportExperiment } from './model.mjs';
+import { createLabClientRuntime } from './client-runtime-host.mjs';
+
+let labClientRuntime;
+try {
+  labClientRuntime = createLabClientRuntime();
+  document.documentElement.dataset.clientRuntime = 'validated';
+  document.documentElement.dataset.clientRuntimeOperations = String(labClientRuntime.operations.length);
+} catch (error) {
+  const failure = document.createElement('p'); failure.setAttribute('role', 'alert');
+  failure.textContent = '起動設定を検証できないため実験を開始できません。検証済みのファイルから開き直してください。';
+  document.body.replaceChildren(failure); throw error;
+}
 
 const $ = id => document.getElementById(id);
 let state = createState(), timer = null, audio = null, soundEnd = null;
@@ -215,7 +227,7 @@ $('listen').addEventListener('click', async () => {
   } catch { stopSound(); status('この環境では電子音の再生を開始できませんでした。模式図で比較できます。'); }
 });
 window.addEventListener('hashchange', () => { stopTimer(); stopSound(); readHash(); render(); });
-window.addEventListener('pagehide', () => { stopTimer(); stopSound(); });
+window.addEventListener('pagehide', event => { stopTimer(); stopSound(); if (!event.persisted) labClientRuntime.destroy(); });
 document.querySelectorAll('.graph-scroll').forEach(region => {
   region.tabIndex = 0; region.setAttribute('role', 'region');
   region.setAttribute('aria-label', `${region.querySelector('svg').getAttribute('aria-label')}。狭い画面では左右キーでスクロールできます。`);
