@@ -33,6 +33,38 @@ test('English only alternatives move with focus; Japanese dake scope stays annot
   assert.equal(analyze(ja).uniqueFocus, 'theme');
   assert.match(analyze(ja).operator, /作用域は自動で移動しません/);
 });
+test('post-subject only does not restrict an emphasized subject outside its annotated domain', () => {
+  const state = createState('introduction'); state.cues[0].bold = true;
+  const result = analyze(state);
+  assert.equal(result.uniqueFocus, 'agent');
+  assert.doesNotMatch(result.operator, /紹介したのは私だけ/);
+  assert.match(result.operator, /主語.*限定しません/);
+  state.cues[0].bold = false; state.cues[2].bold = true;
+  assert.match(analyze(state).operator, /紹介しただけ/);
+});
+test('capitalization contributes only when it changes the visible spelling', () => {
+  const state = createState(); state.cues[0].caps = true;
+  const result = analyze(state);
+  assert.equal(result.state.cues[0].caps, false);
+  assert.equal(result.evidence[0].visual, 0);
+  assert.equal(result.uniqueFocus, null);
+  state.cues[4].caps = true;
+  assert.equal(analyze(state).uniqueFocus, 'theme');
+});
+test('incomplete input exports pending composition, never an interpretation using future arguments', () => {
+  for (const language of ['en', 'ja']) {
+    const state = createState('introduction', language);
+    state.cues[language === 'en' ? 3 : 2].bold = true;
+    for (let step = 0; step < state.cues.length; step++) {
+      state.step = step;
+      const result = exportExperiment(state).result;
+      assert.equal(result.complete, false);
+      assert.match(result.operator, /入力途中.*保留/);
+    }
+    state.step = state.cues.length;
+    assert.doesNotMatch(exportExperiment(state).result.operator, /入力途中/);
+  }
+});
 test('case has no artificial effect on uncased Japanese; function words remain unmodeled', () => {
   const state = createState('purchase', 'ja'); state.cues[2].caps = true;
   assert.equal(analyze(state).active.length, 0);

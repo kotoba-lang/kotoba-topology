@@ -5,6 +5,7 @@ export const COEFFICIENTS = Object.freeze({ bold: 0.45, italic: 0.30, caps: 0.35
 export const neutralCue = () => ({ bold: false, italic: false, caps: false, pitch: 0, energy: 0, duration: 1, boundary: false, syllable: 0 });
 const clamp = (value, min, max, fallback = min) => Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
 export const hasCase = text => text.toUpperCase() !== text.toLowerCase();
+export const canCapitalize = text => text !== text.toUpperCase();
 
 export function createState(exampleId = 'purchase', language = 'en') {
   const example = getExample(exampleId);
@@ -22,7 +23,7 @@ export function normalizeState(input = {}) {
   state.step = Math.trunc(clamp(input.step, 0, tokens.length, tokens.length));
   state.cues = tokens.map((token, i) => {
     const cue = input.cues?.[i] ?? {};
-    return { bold: cue.bold === true, italic: cue.italic === true, caps: hasCase(token.text) && cue.caps === true,
+    return { bold: cue.bold === true, italic: cue.italic === true, caps: canCapitalize(token.text) && cue.caps === true,
       pitch: clamp(cue.pitch, 0, 1), energy: clamp(cue.energy, 0, 1), duration: clamp(cue.duration, 1, 2, 1),
       boundary: cue.boundary === true, syllable: Math.trunc(clamp(cue.syllable, 0, token.syllables.length - 1)) };
   });
@@ -31,7 +32,7 @@ export function normalizeState(input = {}) {
 
 export function cueEvidence(token, cue) {
   const c = COEFFICIENTS;
-  const visual = c.bold * Number(cue.bold) + c.italic * Number(cue.italic) + c.caps * Number(cue.caps && hasCase(token.text));
+  const visual = c.bold * Number(cue.bold) + c.italic * Number(cue.italic) + c.caps * Number(cue.caps && canCapitalize(token.text));
   const acoustic = c.pitch * cue.pitch + c.energy * cue.energy + c.duration * (cue.duration - 1);
   return { visual, acoustic, total: visual + acoustic };
 }
@@ -48,10 +49,13 @@ export function graphMetrics(vertexCount, edges) {
   return { vertices: vertexCount, edges: edges.length, components, beta1: edges.length - vertexCount + components, crossings };
 }
 
-function operatorReading(example, sentence, focusRole) {
+function operatorReading(sentence, focusRole) {
   if (sentence.operator === 'predicate-fixed') return '「だけ」はこの注釈では述語句に対応：紹介しただけ。他の語を強調しても限定の作用域は自動で移動しません。';
   if (!focusRole) return sentence.operator ? 'only の焦点は未指定。文脈と韻律によって解釈が決まります。' : '明示的な限定演算子はありません。強調だけから他の候補を否定しません。';
-  if (sentence.operator === 'focus-sensitive') return ({ agent: '候補となる読み：マヤをケンに紹介したのは私だけ。', theme: '候補となる読み：Ken に紹介した人物は Maya だけ。', recipient: '候補となる読み：Maya を紹介した相手は Ken だけ。', action: '候補となる読み：紹介しただけで、別の行為まではしていない。' })[focusRole];
+  if (sentence.operator === 'focus-sensitive') {
+    if (!sentence.operatorDomain.includes(focusRole)) return 'この位置の only は主語 I を限定しません。「私だけ」には Only I … のような配置が必要です。';
+    return ({ theme: '候補となる読み：Ken に紹介した人物は Maya だけ。', recipient: '候補となる読み：Maya を紹介した相手は Ken だけ。', action: '候補となる読み：紹介しただけで、別の行為まではしていない。' })[focusRole];
+  }
   return '通常の命題は保ち、対比・問いへの答え・談話上の焦点が変わるモデルです。';
 }
 
@@ -74,16 +78,18 @@ export function analyze(input) {
   const unresolved = visible.filter(token => token.head !== null && token.head >= state.step).length;
   const focusEdges = active.flatMap(item => item.alternatives.map(label => ({ role: item.role, label })));
   const unsupported = visible.some((token, i) => !token.role && evidence[i].total > 0);
+  const complete = state.step === sentence.tokens.length;
+  const operator = complete ? operatorReading(sentence, uniqueFocus) : '入力途中。文全体の解釈は保留。';
   return { state, example, sentence, evidence, focus, active, leaders, uniqueFocus, edges, metrics: graphMetrics(visible.length, edges), chunks, unresolved, focusEdges, unsupported,
-    complete: state.step === sentence.tokens.length,
+    complete,
     reading: !active.length ? '焦点未指定。通常体は等しい参照スコアで表示します。' : uniqueFocus ? example.readings[uniqueFocus] : '複数の焦点が同点です。複合焦点・文脈による曖昧さを残します。',
-    operator: operatorReading(example, sentence, uniqueFocus),
+    operator,
     operations: [
       { name: '入力を受け取る', detail: `${state.step} / ${sentence.tokens.length} 語。表記と韻律を独立に取得。` },
       { name: '統語関係を接続', detail: `入力済みの辺 ${edges.length} 本。未到着の主要部を待つ語 ${unresolved} 個。` },
       { name: '焦点を重みづけ', detail: `活性化した役割 ${active.length} 個。文字と韻律の寄与を加算。` },
       { name: '代替候補を展開', detail: `${focusEdges.length} 個の注釈済み候補。新しい事実を断定しない。` },
-      { name: '意味を合成', detail: state.step < sentence.tokens.length ? '入力途中。文全体の解釈は保留。' : operatorReading(example, sentence, uniqueFocus) },
+      { name: '意味を合成', detail: operator },
     ],
   };
 }

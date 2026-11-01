@@ -1,5 +1,5 @@
 import { EXAMPLES } from './examples.mjs';
-import { analyze, createState, normalizeState, neutralCue, hasCase, exportExperiment } from './model.mjs';
+import { analyze, createState, normalizeState, neutralCue, hasCase, canCapitalize, exportExperiment } from './model.mjs';
 
 const $ = id => document.getElementById(id);
 let state = createState(), timer = null, audio = null, soundEnd = null;
@@ -55,8 +55,8 @@ function renderControls(result) {
   const cue = state.cues[state.selected], token = result.sentence.tokens[state.selected];
   $('selected-word').textContent = token.text;
   for (const key of ['bold', 'italic', 'caps']) $('' + key).setAttribute('aria-pressed', String(cue[key]));
-  $('caps').disabled = !hasCase(token.text);
-  $('case-note').textContent = hasCase(token.text) ? '書式はこの語だけに適用。別の語も独立に編集できます。' : 'この語には大文字・小文字の区別がありません。';
+  $('caps').disabled = !canCapitalize(token.text);
+  $('case-note').textContent = !hasCase(token.text) ? 'この語には大文字・小文字の区別がありません。' : !canCapitalize(token.text) ? 'この語は既に全大文字のため、大文字化による追加の強調はありません。' : '書式はこの語だけに適用。別の語も独立に編集できます。';
   for (const key of ['pitch', 'energy', 'duration']) { $(key).value = cue[key]; $(`${key}-value`).value = key === 'duration' ? `${cue[key].toFixed(2)}×` : `${Math.round(cue[key] * 100)}%`; }
   $('syllable').replaceChildren(...token.syllables.map((text, i) => {
     const option = element('option', '', `${i + 1} · ${text}`); option.value = i; return option;
@@ -124,7 +124,7 @@ function renderMeaning(result) {
   $('ordinary').textContent = result.sentence.ordinary;
   $('focus-label').textContent = !result.complete ? 'INPUT IN PROGRESS / 入力途中' : result.uniqueFocus ? `${result.example.roles[result.uniqueFocus].label}の焦点` : result.leaders.length > 1 ? '複数の焦点 / 同点' : 'NEUTRAL / 焦点未指定';
   $('reading').textContent = result.reading;
-  $('operator').textContent = result.complete ? result.operator : '文全体の解釈は、入力が揃うまで保留します。';
+  $('operator').textContent = result.operator;
   $('alternatives').replaceChildren(...result.focusEdges.map(({ role, label }) => element('span', 'alt-chip', `${result.example.roles[role].label}：${label}`)));
   $('unsupported').hidden = !result.unsupported;
   $('unsupported').textContent = '機能語にも表現上の強調があります。この例ではその意味候補を注釈していないため、意味スコアへは反映しません。';

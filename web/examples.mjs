@@ -33,7 +33,7 @@ export const EXAMPLES = [
     roles: { agent: roles.agent, action: roles.action,
       theme: { ...roles.theme, alternatives: ['マヤ', 'リナ', '別の人物'] }, recipient: roles.recipient },
     readings: introMeaning,
-    en: { tokens: [token('I', 'agent', 2, 'nsubj'), token('only', null, 2, 'advmod', ['on', 'ly']), token('introduced', 'action', null, 'root', ['in', 'tro', 'duced']), token('Maya', 'theme', 2, 'obj', ['Ma', 'ya']), token('to', null, 5, 'case'), token('Ken', 'recipient', 2, 'obl')], end: '.', ordinary: '私はマヤをケンに紹介した。', operator: 'focus-sensitive' },
+    en: { tokens: [token('I', 'agent', 2, 'nsubj'), token('only', null, 2, 'advmod', ['on', 'ly']), token('introduced', 'action', null, 'root', ['in', 'tro', 'duced']), token('Maya', 'theme', 2, 'obj', ['Ma', 'ya']), token('to', null, 5, 'case'), token('Ken', 'recipient', 2, 'obl')], end: '.', ordinary: '私はマヤをケンに紹介した。', operator: 'focus-sensitive', operatorDomain: ['action', 'theme', 'recipient'] },
     ja: { tokens: [token('私', 'agent', 6, 'nsubj'), token('は', null, 0, 'case'), token('マヤ', 'theme', 6, 'obj'), token('を', null, 2, 'case'), token('ケン', 'recipient', 6, 'obl'), token('に', null, 4, 'case'), token('紹介した', 'action', null, 'root'), token('だけ', null, 6, 'advmod'), token('だ', null, 6, 'aux')], end: '。', ordinary: '私はマヤをケンに紹介しただけだ。', operator: 'predicate-fixed' },
   },
   { id: 'agency', label: '窓を割る / break a window', scene: '行為者を明示する事態把握',

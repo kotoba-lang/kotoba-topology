@@ -21,6 +21,8 @@ try {
   await page.goto(file); await page.locator('.weight-row').first().waitFor();
   assert.match(await getText('focus-label'), /焦点未指定/);
   assert.equal(await page.locator('.weight-row').count(), 4);
+  await choose('I'); assert.equal(await page.locator('#caps').isDisabled(), true);
+  assert.match(await getText('case-note'), /既に全大文字/);
   await choose('red'); await click('bold');
   assert.equal(await page.locator('.word.is-bold').innerText(), 'red\n04');
   assert.match(await getText('focus-label'), /性質・色/);
@@ -42,7 +44,10 @@ try {
   assert.equal(data.kind, 'illustrative-model-not-observed-data');
   assert.equal(data.state.cues[3].caps, true);
   await click('reset'); assert.equal(await page.locator('.is-emphasized').count(), 0);
-  await page.locator('#example').selectOption('introduction'); await choose('Maya'); await click('bold');
+  await page.locator('#example').selectOption('introduction');
+  await choose('I'); await click('bold');
+  assert.match(await getText('operator'), /主語.*限定しません/);
+  await click('clear-word'); await choose('Maya'); await click('bold');
   assert.match(await getText('operator'), /人物は Maya だけ/);
   await click('clear-word'); await choose('Ken'); await click('italic');
   assert.match(await getText('operator'), /相手は Ken だけ/);
@@ -50,6 +55,10 @@ try {
   await click('bold'); assert.match(await getText('operator'), /作用域は自動で移動しません/);
   await page.locator('#step').focus(); await page.keyboard.press('Home');
   assert.match(await getText('operator'), /保留/); assert.match(await getText('step-value'), /0 \/ 9/);
+  const prefixDownloadEvent = page.waitForEvent('download'); await click('export');
+  const prefixDownload = await prefixDownloadEvent, prefixPath = resolve(output, 'prefix-experiment.json'); await prefixDownload.saveAs(prefixPath);
+  const prefix = JSON.parse(await readFile(prefixPath, 'utf8'));
+  assert.equal(prefix.result.complete, false); assert.match(prefix.result.operator, /入力途中.*保留/);
   assert.equal(await page.locator('#graph .focus-dot').count(), 0);
   await click('play'); await page.waitForFunction(() => document.querySelector('#step').value !== '0');
   await click('play'); assert.match(await page.locator('#play').getAttribute('aria-label'), /再生/);
