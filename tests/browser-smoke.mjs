@@ -19,6 +19,10 @@ const getText = id => page.locator(`#${id}`).textContent();
 const endRange = async id => { await page.locator(`#${id}`).focus(); await page.keyboard.press('End'); };
 try {
   await page.goto(file); await page.locator('.weight-row').first().waitFor();
+  assert.equal(await page.locator('html').getAttribute('data-client-runtime'), 'validated');
+  assert.equal(await page.locator('html').getAttribute('data-client-runtime-operations'), '0');
+  assert.equal(await page.locator('meta[data-kotoba-offline-policy="v1"]').count(), 1);
+  assert.equal(await page.locator('dialog[open]').count(), 0);
   assert.match(await getText('focus-label'), /焦点未指定/);
   assert.equal(await page.locator('.weight-row').count(), 4);
   await choose('I'); assert.equal(await page.locator('#caps').isDisabled(), true);

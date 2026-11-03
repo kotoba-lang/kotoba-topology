@@ -1,0 +1,20 @@
+{
+  "schema": "kotoba-topology.runtime-source.v1",
+  "repository": "kotoba-lang/kotoba",
+  "revision": "4b6f2c13f4ade9b8c8978f57faed2717aafd1f38",
+  "path": "lib/kotoba.wasmWebcomponent/src/kotoba-client-runtime.js",
+  "sha256": "91df9207480ddc8bc4d4f38825b7fa905a7dddf482070fc9f42e7073d357214f",
+  "bytes": 46491,
+  "license": {
+    "path": "lib/kotoba.wasmWebcomponent/LICENSE",
+    "sha256": "c95bae1d1ce0235ecccd3560b772ec1efb97f348a79f0fbe0a634f0c2ccefe2c",
+    "bytes": 11358
+  },
+  "reviewedBaseline": {
+    "revision": "6f74fe21760a1c752a05340ffb52e69a38877874",
+    "sha256": "4e6ef6eea88641b20c490692d271ce57891e53e01fcc5c303135a325b2f5b693",
+    "record": "https://linear.app/kotobalabs/issue/KOTOBA-159"
+  },
+  "candidateChange": "memory local-state adapter only; approval and endpoint code unchanged",
+  "sourcePullRequest": "https://github.com/kotoba-lang/kotoba/pull/1161"
+}
